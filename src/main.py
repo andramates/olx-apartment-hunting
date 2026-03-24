@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from src.infrastructure.config.settings import get_settings
 from src.presentation.api.routers.filters_router import router as filters_router
 from src.presentation.api.routers.users_router import router as users_router
+from src.presentation.api.routers.notifications_router import router as notifications_router
 
 settings = get_settings()
 
@@ -16,3 +17,4 @@ async def health() -> dict[str, str]:
 
 app.include_router(users_router)
 app.include_router(filters_router)
+app.include_router(notifications_router)

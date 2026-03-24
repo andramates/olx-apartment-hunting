@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "OLX Apartment Hunting"
     app_env: str = "dev"
     database_url: str
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    smtp_from: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
