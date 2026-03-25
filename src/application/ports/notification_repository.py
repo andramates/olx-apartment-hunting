@@ -19,3 +19,11 @@ class NotificationRepository(ABC):
     @abstractmethod
     def mark_failed(self, notification_id: int, error: str) -> None:
         pass
+
+    @abstractmethod
+    def mark_many_sent(self, notification_ids: list[int]) -> None:
+        pass
+
+    @abstractmethod
+    def mark_many_failed(self, notification_ids: list[int], error: str) -> None:
+        pass

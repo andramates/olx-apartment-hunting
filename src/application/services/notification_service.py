@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from src.application.ports.email_sender import EmailSender
 from src.application.ports.notification_repository import NotificationRepository
 from src.application.ports.user_repository import UserRepository
@@ -19,25 +21,47 @@ class NotificationService:
 
     def dispatch_pending_notifications(self) -> int:
         pending_notifications = self.notification_repository.list_pending()
-        sent_count = 0
+        notifications_by_user: dict[int, list] = defaultdict(list)
 
         for notification in pending_notifications:
+            notifications_by_user[notification.user_id].append(notification)
+
+        sent_email_count = 0
+
+        for user_id, user_notifications in notifications_by_user.items():
+            notification_ids = [notification.id for notification in user_notifications]
+
             try:
-                user = self.user_repository.get_by_id(notification.user_id)
+                user = self.user_repository.get_by_id(user_id)
                 if user is None:
                     raise ValueError("User not found")
 
-                listing = None
-                for item in self.listing_repository.list_all():
-                    if item.id == notification.listing_id:
-                        listing = item
-                        break
+                listings = []
+                for notification in user_notifications:
+                    listing = self.listing_repository.get_by_id(notification.listing_id)
+                    if listing is not None:
+                        listings.append(listing)
 
-                if listing is None:
-                    raise ValueError("Listing not found")
+                if not listings:
+                    raise ValueError("No listings found for pending notifications")
 
-                subject = f"Anunț nou OLX: {listing.title}"
-                body = f"{listing.title}\n\n{listing.url}"
+                subject = f"Ai {len(listings)} anunțuri noi OLX"
+
+                lines = [
+                    "Au apărut anunțuri noi pentru filtrele tale:",
+                    "",
+                ]
+
+                for index, listing in enumerate(listings, start=1):
+                    lines.append(f"{index}. {listing.title}")
+                    if listing.price is not None:
+                        lines.append(f"   Preț: {listing.price}")
+                    if listing.location:
+                        lines.append(f"   Locație: {listing.location}")
+                    lines.append(f"   Link: {listing.url}")
+                    lines.append("")
+
+                body = "\n".join(lines)
 
                 self.email_sender.send(
                     to_email=user.email,
@@ -45,10 +69,13 @@ class NotificationService:
                     body=body,
                 )
 
-                self.notification_repository.mark_sent(notification.id)
-                sent_count += 1
+                self.notification_repository.mark_many_sent(notification_ids)
+                sent_email_count += 1
 
             except Exception as exc:
-                self.notification_repository.mark_failed(notification.id, str(exc))
+                self.notification_repository.mark_many_failed(
+                    notification_ids,
+                    str(exc),
+                )
 
-        return sent_count
+        return sent_email_count

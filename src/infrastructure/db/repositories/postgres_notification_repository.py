@@ -79,3 +79,37 @@ class PostgresNotificationRepository(NotificationRepository):
         notification_model.attempts += 1
         notification_model.last_error = error[:1000]
         self.session.commit()
+
+    def mark_many_sent(self, notification_ids: list[int]) -> None:
+        if not notification_ids:
+            return
+
+        notification_models = (
+            self.session.query(NotificationModel)
+            .filter(NotificationModel.id.in_(notification_ids))
+            .all()
+        )
+
+        now = datetime.now(timezone.utc)
+        for model in notification_models:
+            model.status = "sent"
+            model.sent_at = now
+
+        self.session.commit()
+
+    def mark_many_failed(self, notification_ids: list[int], error: str) -> None:
+        if not notification_ids:
+            return
+
+        notification_models = (
+            self.session.query(NotificationModel)
+            .filter(NotificationModel.id.in_(notification_ids))
+            .all()
+        )
+
+        for model in notification_models:
+            model.status = "failed"
+            model.attempts += 1
+            model.last_error = error[:1000]
+
+        self.session.commit()

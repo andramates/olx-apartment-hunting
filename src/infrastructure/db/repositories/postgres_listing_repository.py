@@ -65,3 +65,18 @@ class PostgresListingRepository(ListingRepository):
             )
             for listing_model in listing_models
         ]
+
+    def get_by_id(self, listing_id: int) -> Listing | None:
+        listing_model = self.session.get(ListingModel, listing_id)
+        if listing_model is None:
+            return None
+
+        return Listing(
+            id=listing_model.id,
+            external_id=listing_model.external_id,
+            title=listing_model.title,
+            url=listing_model.url,
+            price=listing_model.price,
+            location=listing_model.location,
+            first_seen_at=listing_model.first_seen_at,
+        )

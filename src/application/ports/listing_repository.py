@@ -13,5 +13,9 @@ class ListingRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_id(self, listing_id: int) -> Listing | None:
+        pass
+
+    @abstractmethod
     def list_all(self) -> list[Listing]:
         pass
