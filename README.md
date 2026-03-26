@@ -1,4 +1,4 @@
-# OLX Apartment Hunting
+# Apartment Listings Monitoring System
 
 Aplicație backend pentru monitorizarea anunțurilor OLX pe baza unor filtre salvate și trimiterea de notificări email când apar anunțuri noi.
 
