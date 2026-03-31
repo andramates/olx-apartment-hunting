@@ -1,9 +1,12 @@
+import logging
 from collections import defaultdict
 
 from src.application.ports.email_sender import EmailSender
+from src.application.ports.listing_repository import ListingRepository
 from src.application.ports.notification_repository import NotificationRepository
 from src.application.ports.user_repository import UserRepository
-from src.application.ports.listing_repository import ListingRepository
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService:
@@ -21,6 +24,8 @@ class NotificationService:
 
     def dispatch_pending_notifications(self) -> int:
         pending_notifications = self.notification_repository.list_pending()
+        logger.info("pending_notifications=%s", len(pending_notifications))
+
         notifications_by_user: dict[int, list] = defaultdict(list)
 
         for notification in pending_notifications:
@@ -45,7 +50,11 @@ class NotificationService:
                 if not listings:
                     raise ValueError("No listings found for pending notifications")
 
-                subject = f"Ai {len(listings)} anunțuri noi OLX"
+                subject = (
+                    "Ai 1 anunț nou OLX"
+                    if len(listings) == 1
+                    else f"Ai {len(listings)} anunțuri noi OLX"
+                )
 
                 lines = [
                     "Au apărut anunțuri noi pentru filtrele tale:",
@@ -72,10 +81,19 @@ class NotificationService:
                 self.notification_repository.mark_many_sent(notification_ids)
                 sent_email_count += 1
 
-            except Exception as exc:
-                self.notification_repository.mark_many_failed(
-                    notification_ids,
-                    str(exc),
+                logger.info(
+                    "sent grouped email to user_id=%s listings_count=%s",
+                    user_id,
+                    len(listings),
                 )
 
+            except Exception as exc:
+                self.notification_repository.mark_many_failed(notification_ids, str(exc))
+                logger.exception(
+                    "failed to send grouped email to user_id=%s error=%s",
+                    user_id,
+                    exc,
+                )
+
+        logger.info("dispatch_pending_notifications finished sent_email_count=%s", sent_email_count)
         return sent_email_count

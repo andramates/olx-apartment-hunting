@@ -7,8 +7,10 @@ from src.infrastructure.scheduling.scheduler import configure_scheduler, schedul
 from src.presentation.api.routers.filters_router import router as filters_router
 from src.presentation.api.routers.notifications_router import router as notifications_router
 from src.presentation.api.routers.users_router import router as users_router
+from src.shared.utils.logger import setup_logging
 
 settings = get_settings()
+setup_logging()
 
 
 @asynccontextmanager
